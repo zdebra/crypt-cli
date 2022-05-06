@@ -8,10 +8,6 @@ import (
 	"fmt"
 )
 
-var (
-	initialVector = "1234567890123456"
-)
-
 func Encrypt(password, plaintext string) (string, error) {
 	sanitizedPw, err := passwordSanity(password)
 	if err != nil {
@@ -21,7 +17,7 @@ func Encrypt(password, plaintext string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("create AES cipher: %w", err)
 	}
-	cbc := cipher.NewCBCEncrypter(block, []byte(initialVector))
+	cbc := cipher.NewCBCEncrypter(block, initialVector(block.BlockSize()))
 
 	textPadded := pkcs7pad([]byte(plaintext), block.BlockSize())
 	out := make([]byte, len(textPadded))
@@ -39,11 +35,15 @@ func Decrypt(password, encryptedTextHex string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("create AES cipher: %w", err)
 	}
-	cbc := cipher.NewCBCDecrypter(block, []byte(initialVector))
+	cbc := cipher.NewCBCDecrypter(block, initialVector(block.BlockSize()))
 
 	plaintext := make([]byte, len(ciphertext))
 	cbc.CryptBlocks(plaintext, ciphertext)
 	return string(pkcs7strip(plaintext, block.BlockSize())), nil
+}
+
+func initialVector(size int) []byte {
+	return bytes.Repeat([]byte{byte(size)}, size)
 }
 
 func passwordSanity(pw string) (string, error) {
