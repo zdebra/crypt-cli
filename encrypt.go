@@ -21,11 +21,11 @@ func Encrypt(password, plaintext string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("create AES cipher: %w", err)
 	}
-	ecb := cipher.NewCBCEncrypter(block, []byte(initialVector))
+	cbc := cipher.NewCBCEncrypter(block, []byte(initialVector))
 
 	textPadded := pkcs7pad([]byte(plaintext), block.BlockSize())
 	out := make([]byte, len(textPadded))
-	ecb.CryptBlocks(out, textPadded)
+	cbc.CryptBlocks(out, textPadded)
 	return hex.EncodeToString(out), nil
 }
 
@@ -39,10 +39,10 @@ func Decrypt(password, encryptedTextHex string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("create AES cipher: %w", err)
 	}
-	ecb := cipher.NewCBCDecrypter(block, []byte(initialVector))
+	cbc := cipher.NewCBCDecrypter(block, []byte(initialVector))
 
 	plaintext := make([]byte, len(ciphertext))
-	ecb.CryptBlocks(plaintext, ciphertext)
+	cbc.CryptBlocks(plaintext, ciphertext)
 	return string(pkcs7strip(plaintext, block.BlockSize())), nil
 }
 
