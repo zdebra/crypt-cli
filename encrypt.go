@@ -5,8 +5,11 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/hex"
+	"errors"
 	"fmt"
 )
+
+var ErrInvalidPassword = errors.New("invalid password")
 
 func Encrypt(password, plaintext string) (string, error) {
 	sanitizedPw, err := passwordSanity(password)
@@ -37,9 +40,13 @@ func Decrypt(password, encryptedTextHex string) (string, error) {
 	}
 	cbc := cipher.NewCBCDecrypter(block, initialVector(block.BlockSize()))
 
-	plaintext := make([]byte, len(ciphertext))
-	cbc.CryptBlocks(plaintext, ciphertext)
-	return string(pkcs7strip(plaintext, block.BlockSize())), nil
+	plaintextWithPadding := make([]byte, len(ciphertext))
+	cbc.CryptBlocks(plaintextWithPadding, ciphertext)
+	plaintext, err := pkcs7strip(plaintextWithPadding, block.BlockSize())
+	if err != nil {
+		return "", ErrInvalidPassword
+	}
+	return string(plaintext), nil
 }
 
 func initialVector(size int) []byte {
@@ -58,20 +65,20 @@ func passwordSanity(pw string) (string, error) {
 	return string(pkcs7pad([]byte(pw), 32)), nil
 }
 
-func pkcs7strip(data []byte, blockSize int) []byte {
+func pkcs7strip(data []byte, blockSize int) ([]byte, error) {
 	length := len(data)
 	if length == 0 {
-		panic("data is empty")
+		return nil, fmt.Errorf("data is empty")
 	}
 	if length%blockSize != 0 {
-		panic("data is not block-aligned")
+		return nil, fmt.Errorf("data is not block-aligned")
 	}
 	padLen := int(data[length-1])
 	ref := bytes.Repeat([]byte{byte(padLen)}, padLen)
 	if padLen > blockSize || padLen == 0 || !bytes.HasSuffix(data, ref) {
-		panic("invalid padding")
+		return nil, fmt.Errorf("invalid padding")
 	}
-	return data[:length-padLen]
+	return data[:length-padLen], nil
 }
 
 func pkcs7pad(data []byte, blockSize int) []byte {
