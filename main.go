@@ -14,7 +14,6 @@ var encryptCmd = &cobra.Command{
 	Use:   "encrypt",
 	Short: "Encrypt text with password",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println(args)
 		if len(args) < 1 {
 			return fmt.Errorf("no text to encrypt provided")
 		}
@@ -62,7 +61,7 @@ var decryptCmd = &cobra.Command{
 }
 
 func main() {
-	var rootCmd = &cobra.Command{Use: "app"}
+	var rootCmd = &cobra.Command{Use: "cryptcli"}
 	rootCmd.AddCommand(encryptCmd, decryptCmd)
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
