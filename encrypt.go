@@ -11,6 +11,9 @@ import (
 
 var ErrInvalidPassword = errors.New("invalid password")
 
+// Encrypt plaintext with a password
+// password has to be at least non empty string with maximum length of 32
+// plaintext is encrypted AES in CBC mode
 func Encrypt(password, plaintext string) (string, error) {
 	sanitizedPw, err := passwordSanity(password)
 	if err != nil {
@@ -28,6 +31,7 @@ func Encrypt(password, plaintext string) (string, error) {
 	return hex.EncodeToString(out), nil
 }
 
+// Decrypt previously encrypted text with a password
 func Decrypt(password, encryptedTextHex string) (string, error) {
 	sanitizedPw, err := passwordSanity(password)
 	if err != nil {
